@@ -67,7 +67,6 @@ select{padding:11px;font:inherit;color:var(--ink);background:var(--bg);border:1p
   <button class="tab" id="tab-goals">Goals</button>
 </nav>
 <div class="conn" id="conn">Connecting…</div>
-<a id="testlink" href="#" target="_blank" rel="noopener" hidden style="display:block;text-align:center;margin:-8px 0 16px;font-size:.9rem;color:var(--acc)">Open the Google link in a new tab to test it</a>
 
 <!-- ================= DAILY LEDGER ================= -->
 <div id="v-main">
@@ -559,14 +558,13 @@ showTab();render();
 (async()=>{
   db=sheetDb(SHEET_URL);
   db.subscribe(onState);
-  const reload=()=>db.load().then(()=>{$("gwarn").hidden=db.isV2();$("testlink").hidden=true});
+  const reload=()=>db.load().then(()=>{$("gwarn").hidden=db.isV2()});
   try{
     await reload();
     if(db.isV2())say("Connected to Google Sheet ✓","ok");
     else say("Connected, but the Google Apps Script is the old version. Goals need the new Code.gs (see the Goals tab).","err");
   }catch(e){
     say("Cannot connect to Google Sheet ("+e.message+"). Check that the link is right and access is set to Anyone.","err");
-    $("testlink").href=SHEET_URL+"?all=1";$("testlink").hidden=false;
   }
   db.start();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)reload().catch(()=>{})});
