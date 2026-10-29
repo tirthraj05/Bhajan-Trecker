@@ -6,16 +6,18 @@
 <title>My Bhajan Ledger</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
---bg:#fdf6ec;--card:#fff;--ink:#3b2a1a;--mute:#8a7560;--acc:#d9691e;--acc2:#fbe3cf;--line:#ecdcc8;--ok:#2e7d4f}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#1b1510;--card:#261e17;--ink:#f3e8da;--mute:#b3a08a;--acc:#f08a3c;--acc2:#3a2a1c;--line:#3a2e22;--ok:#6fcf97}}
-:root[data-theme="dark"]{color-scheme:dark;--bg:#1b1510;--card:#261e17;--ink:#f3e8da;--mute:#b3a08a;--acc:#f08a3c;--acc2:#3a2a1c;--line:#3a2e22;--ok:#6fcf97}
+--bg:#fdf6ec;--card:#fff;--ink:#3b2a1a;--mute:#8a7560;--acc:#d9691e;--acc2:#fbe3cf;--line:#ecdcc8;--ok:#2e7d4f;--err:#c62828}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#1b1510;--card:#261e17;--ink:#f3e8da;--mute:#b3a08a;--acc:#f08a3c;--acc2:#3a2a1c;--line:#3a2e22;--ok:#6fcf97;--err:#ff8a80}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#1b1510;--card:#261e17;--ink:#f3e8da;--mute:#b3a08a;--acc:#f08a3c;--acc2:#3a2a1c;--line:#3a2e22;--ok:#6fcf97;--err:#ff8a80}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
 .wrap{max-width:900px;margin:0 auto;padding:16px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
-@media(min-width:760px){.wrap{grid-template-columns:minmax(0,3fr) minmax(0,2fr);align-items:start}h1{grid-column:1/-1}}
+@media(min-width:760px){.wrap{grid-template-columns:minmax(0,3fr) minmax(0,2fr);align-items:start}h1,.conn{grid-column:1/-1}}
 h1{margin:4px 0;font-size:1.6rem;text-align:center;letter-spacing:.5px}
 h2{margin:0 0 10px;font-size:1.1rem;color:var(--acc)}
+.conn{text-align:center;font-size:.9rem;padding:8px 12px;border-radius:10px;background:var(--acc2);color:var(--ink)}
+.conn.ok{color:var(--ok)}.conn.err{color:var(--err)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
 label{display:block;font-size:.85rem;color:var(--mute);margin:10px 0 4px}
 input{width:100%;padding:11px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px}
@@ -31,25 +33,16 @@ input{width:100%;padding:11px;font:inherit;color:var(--ink);background:var(--bg)
 .h button{border:0;background:none;color:var(--mute);cursor:pointer;font-size:1rem}
 .mute{color:var(--mute);font-size:.85rem}
 .msg{text-align:center;color:var(--mute);padding:20px}
-.mon{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px}
+.mon{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
 .mon b{font-size:1rem}
-.strip{display:flex;gap:8px;overflow-x:auto;padding:8px 2px 10px;scroll-snap-type:x proximity}
-.day{flex:0 0 auto;width:54px;padding:8px 0 6px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;text-align:center;cursor:pointer;scroll-snap-align:center;position:relative}
-.day small{display:block;font-size:.7rem;color:var(--mute);text-transform:uppercase;letter-spacing:.5px}
-.day span{display:block;font-size:1.25rem;font-weight:700}
-.day.on{background:var(--acc);border-color:var(--acc);color:#fff}
-.day.on small{color:#ffe9d6}
-.day.today{box-shadow:0 0 0 2px var(--acc2)}
-.day i{display:block;width:6px;height:6px;border-radius:50%;margin:2px auto 0;background:transparent}
-.day i.has{background:var(--ok)}
-.day.on i.has{background:#fff}
-.back{border:0;background:none;color:var(--acc);font:inherit;font-size:.85rem;cursor:pointer;padding:0}
-table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:600}.tw{overflow:auto;max-height:320px}.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:600}
+.tw{overflow:auto;max-height:320px}.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>My Bhajan Ledger</h1>
+<div class="conn" id="conn">Connecting…</div>
 
 <section class="card">
   <h2>Add Entry</h2>
@@ -76,54 +69,103 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;
     <div class="hist" id="hist"></div>
   </section>
 </aside>
+
 <section class="card" style="grid-column:1/-1">
   <h2>Data Table</h2>
-  <div class="bar"><button class="btn sm" id="dl">Download CSV</button><button class="btn sm ghost" id="ld">Load from CSV file</button><input id="fi" type="file" accept=".csv,text/csv" style="display:none"></div>
-  <p class="mute" id="note"></p>
+  <div class="bar">
+    <button class="btn sm" id="sync">Sync now</button>
+    <button class="btn sm ghost" id="dl">Download CSV</button>
+    <button class="btn sm ghost" id="ld">Load from CSV file</button>
+    <input id="fi" type="file" accept=".csv,text/csv" style="display:none">
+  </div>
   <div class="tw"><table><thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Count</th></tr></thead><tbody id="tb"></tbody></table></div>
 </section>
 </div>
 
 <script>
+// Your Google Apps Script web app link (all data is stored in the linked Google Sheet)
+const SHEET_URL="https://script.google.com/macros/s/AKfycbxGHyTeWsDm6IsjvlLl-dOLtMyIFVCDgIXQmKT88SUMoAY41r66yjQU0QlAvAxt0LQUYg/exec";
+
 const DEFAULT_KINDS=["Dandvat","Parikrama","Smaran Dhun","Kirtan"];
 const LEGACY={"દંડવત":"Dandvat","પરિક્રમા":"Parikrama","સ્મરણ ધૂન":"Smaran Dhun","કીર્તન":"Kirtan"};
-let db=null,rows=[],sel="";
+let db=null,rows=[];
 const $=id=>document.getElementById(id);
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const today=()=>iso(new Date());
-sel=today();
+const unit=k=>k==="Smaran Dhun"?" min":"";
+const say=(t,c)=>{const e=$("conn");e.textContent=t;e.className="conn "+(c||"")};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let sel=today(),mon=today().slice(0,7);
 
 function kinds(){const s=new Set(DEFAULT_KINDS);rows.forEach(r=>s.add(r.kind));return [...s]}
 
-function renderStrip(scroll){$("dt").value=sel;return;
-  const has=new Set(rows.filter(r=>r.type==="entry").map(r=>r.date));
-  const S=$("strip");S.innerHTML="";
-  const t=new Date();
-  for(let n=29;n>=0;n--){
-    const d=new Date(t.getFullYear(),t.getMonth(),t.getDate()-n),k=iso(d);
-    const b=document.createElement("button");
-    b.className="day"+(k===sel?" on":"")+(k===today()?" today":"");
-    b.innerHTML="<small></small><span></span><i></i>";
-    b.children[0].textContent=d.toLocaleDateString("en-US",{weekday:"short"});
-    b.children[1].textContent=d.getDate();
-    if(has.has(k))b.children[2].className="has";
-    b.onclick=()=>{sel=k;renderStrip(false)};
-    S.appendChild(b);
+/* ---------- storage: Google Sheet through Apps Script ---------- */
+function sheetDb(url){
+  let map={},pending=[],timer=null,busy=false,fails=0;const subs=[];
+  try{map=JSON.parse(localStorage.getItem("bhajan_cache"))||{}}catch(e){}
+  try{pending=JSON.parse(localStorage.getItem("bhajan_pending"))||[]}catch(e){}
+  const savePend=()=>{try{localStorage.setItem("bhajan_pending",JSON.stringify(pending))}catch(e){}};
+  const emit=()=>{
+    try{localStorage.setItem("bhajan_cache",JSON.stringify(map))}catch(e){}
+    const s={docs:Object.keys(map).map(id=>({id,data:()=>map[id]}))};subs.forEach(f=>f(s));
+  };
+  const apply=(o,ops)=>{ops.forEach(op=>{if(op.del)delete o[op.id];else o[op.id]=op.d});return o};
+  async function pull(){
+    const r=await fetch(url+(url.includes("?")?"&":"?")+"t="+Date.now());
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const j=await r.json();const o={};
+    (j.rows||[]).forEach(x=>{o[x.id]={type:x.type,kind:x.kind,count:x.count,date:x.date,createdAt:x.createdAt}});
+    return o;
   }
-  const [y,m,dd]=sel.split("-").map(Number);
-  $("monlbl").textContent=new Date(y,m-1,dd).toLocaleDateString("en-US",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  if(scroll){const on=S.querySelector(".on");if(on)S.scrollLeft=on.offsetLeft-S.clientWidth+on.clientWidth+16}
+  async function flush(){
+    if(busy||!pending.length)return;
+    busy=true;say("Saving…");
+    const ops=pending.slice();
+    try{
+      await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({ops})});
+      const last={};ops.forEach(op=>last[op.id]=op);
+      let o=null,ok=false;
+      for(let t=0;t<5&&!ok;t++){
+        await sleep(1500);
+        o=await pull();
+        ok=Object.values(last).every(op=>op.del?!o[op.id]:!!o[op.id]);
+      }
+      if(!ok)throw new Error("the Sheet did not receive the data");
+      pending=pending.slice(ops.length);savePend();
+      map=apply(o,pending);emit();fails=0;busy=false;
+      say("Saved to Google Sheet ✓","ok");
+      if(pending.length)sched();
+    }catch(e){
+      busy=false;fails++;
+      say("Not saved yet: "+e.message+". Retrying…","err");
+      if(fails<=5)setTimeout(flush,4000*fails);
+    }
+  }
+  const sched=()=>{clearTimeout(timer);timer=setTimeout(flush,700)};
+  return {
+    doc:p=>{const id=p.split("/")[1];return {
+      set:async d=>{map[id]=d;pending.push({id,d});savePend();emit();sched()},
+      delete:async()=>{delete map[id];pending.push({id,del:1});savePend();emit();sched()}}},
+    collection:()=>({onSnapshot:f=>{subs.push(f);emit();return ()=>{}}}),
+    load:async()=>{const o=await pull();if(!busy){map=apply(o,pending);emit()}},
+    flush:()=>{fails=0;return flush()},
+    start:()=>{if(pending.length)sched()},
+    pendingCount:()=>pending.length
+  };
 }
 
+/* ---------- screen ---------- */
 function render(){
   const ks=kinds();
   const keep={};document.querySelectorAll("#fields input").forEach(i=>keep[i.dataset.k]=i.value);
   const F=$("fields");F.innerHTML="";
   ks.forEach(k=>{
     const l=document.createElement("label");l.textContent=k==="Smaran Dhun"?"Smaran Dhun (minutes)":k;
-    const i=document.createElement("input");i.type="number";i.min="0";i.inputMode="numeric";i.placeholder=k==="Smaran Dhun"?"Minutes":"Count";i.dataset.k=k;i.value=keep[k]||"";
+    const i=document.createElement("input");i.type="number";i.min="0";i.inputMode="numeric";
+    i.placeholder=k==="Smaran Dhun"?"Minutes":"Count";i.dataset.k=k;i.value=keep[k]||"";
     F.append(l,i);
   });
+  $("dt").value=sel;
 
   const bal={};ks.forEach(k=>bal[k]=0);
   rows.forEach(r=>{bal[r.kind]=(bal[r.kind]||0)+(r.type==="arpan"?-r.count:r.count)});
@@ -132,14 +174,16 @@ function render(){
     const d=document.createElement("div");d.className="row";
     d.innerHTML='<span class="n"></span><span class="num"></span>';
     d.children[0].textContent=k;d.children[1].textContent=bal[k]+unit(k);
-    const i=document.createElement("input");i.type="number";i.min="1";i.inputMode="numeric";i.placeholder=k==="Smaran Dhun"?"Minutes":"Count";
+    const i=document.createElement("input");i.type="number";i.min="1";i.inputMode="numeric";
+    i.placeholder=k==="Smaran Dhun"?"Minutes":"Count";
     const b=document.createElement("button");b.className="btn sm ghost";b.textContent="Offer";
     b.onclick=()=>arpan(k,parseInt(i.value,10),bal[k],i);
     d.append(i,b);B.appendChild(d);
   });
 
+  const sorted=[...rows].sort((a,b)=>(b.date+(b.createdAt||"")).localeCompare(a.date+(a.createdAt||"")));
   const H=$("hist");H.innerHTML="";
-  [...rows].sort((a,b)=>(b.date+b.createdAt).localeCompare(a.date+a.createdAt)).forEach(r=>{
+  sorted.forEach(r=>{
     const d=document.createElement("div");d.className="h";
     const t=document.createElement("span");
     t.textContent=r.date+" · "+(r.type==="arpan"?"Offered ":"Added ")+r.kind+" "+(r.type==="arpan"?"−":"+")+r.count+unit(r.kind);
@@ -148,122 +192,91 @@ function render(){
     d.append(t,x);H.appendChild(d);
   });
   if(!rows.length)H.innerHTML='<div class="msg">No entries yet</div>';
-  renderStrip(false);renderMonth();renderTable();
-}
 
-const unit=k=>k==="Smaran Dhun"?" min":"";
-const say=t=>{$("note").textContent=t};
-// Paste your Google Apps Script "Web app" URL (ends with /exec) between the quotes:
-const SHEET_URL="https://script.google.com/macros/s/AKfycbxGHyTeWsDm6IsjvlLl-dOLtMyIFVCDgIXQmKT88SUMoAY41r66yjQU0QlAvAxt0LQUYg/exec";
-function sheetDb(url){
-  let map={},pending=[],timer=null,busy=false,retried=false;const subs=[];
-  try{map=JSON.parse(localStorage.getItem("bhajan_cache"))||{}}catch(e){}
-  const emit=()=>{try{localStorage.setItem("bhajan_cache",JSON.stringify(map))}catch(e){}const s={docs:Object.keys(map).map(id=>({id,data:()=>map[id]}))};subs.forEach(f=>f(s))};
-  async function pull(){
-    const r=await fetch(url+(url.includes("?")?"&":"?")+"t="+Date.now(),{cache:"no-store"});
-    if(!r.ok)throw new Error(r.status);
-    const j=await r.json();const o={};
-    (j.rows||[]).forEach(x=>{o[x.id]={type:x.type,kind:x.kind,count:x.count,date:x.date,createdAt:x.createdAt}});
-    return o;
-  }
-  async function flush(){
-    if(busy||!pending.length)return;busy=true;say("Saving…");
-    const ops=pending;pending=[];
-    try{
-      const r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({ops})});
-      const j=await r.json();if(!j.ok)throw new Error(j.error||"error");
-      say("Saved to Google Sheet");busy=false;retried=false;if(pending.length)sched();
-    }catch(e){
-      pending=ops.concat(pending);busy=false;say("Save failed ("+e.message+"). Will retry.");
-      if(!retried){retried=true;setTimeout(flush,5000)}
-    }
-  }
-  const sched=()=>{clearTimeout(timer);timer=setTimeout(flush,700)};
-  return {
-    doc:p=>{const id=p.split("/")[1];return {
-      set:async d=>{map[id]=d;pending.push({id,d});emit();sched()},
-      delete:async()=>{delete map[id];pending.push({id,del:1});emit();sched()}}},
-    collection:()=>({onSnapshot:f=>{subs.push(f);emit();return ()=>{}}}),
-    load:async()=>{const o=await pull();if(!pending.length&&!busy){map=o;emit()}}
-  };
-}
-function renderTable(){
   const T=$("tb");T.innerHTML="";
-  [...rows].sort((a,b)=>(b.date+(b.createdAt||"")).localeCompare(a.date+(a.createdAt||""))).forEach(r=>{
+  sorted.forEach(r=>{
     const tr=document.createElement("tr");
     [r.date,r.kind,r.type==="arpan"?"Offered":"Added",r.count+unit(r.kind)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
     T.appendChild(tr);
   });
+  renderMonth();
 }
-function toCsv(){return ["id,date,type,kind,count,createdAt",...rows.map(r=>[r.id,r.date,r.type,r.kind,r.count,r.createdAt||""].join(","))].join("\n")}
-async function dlCsv(){
-  const blob=new Blob([toCsv()],{type:"text/csv"}),name="bhajan-data-"+today()+".csv";
-  let d=null;try{d=await claude.use("downloads")}catch(e){}
-  if(d){try{await d.save({filename:name,data:blob})}catch(e){}return}
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
-}
-async function loadCsv(file){
-  const lines=(await file.text()).split(/\r?\n/).slice(1).filter(Boolean);let n=0;
-  for(const ln of lines){
-    const [id,date,type,kind,count,createdAt]=ln.split(",");const c=parseInt(count,10);
-    if(!id||!date||!kind||!c||!["entry","arpan"].includes(type))continue;
-    await db.doc("log/"+id).set({type,kind,count:c,date,createdAt:createdAt||""});n++;
-  }
-  $("note").textContent=n+" rows loaded.";
-}
-$("dl").onclick=dlCsv;
-$("ld").onclick=()=>$("fi").click();
-$("fi").onchange=e=>{const f=e.target.files[0];if(f&&db)loadCsv(f);e.target.value=""};
-let mon=today().slice(0,7);
+
 function renderMonth(){
   const [y,m]=mon.split("-").map(Number);
   $("monname").textContent=new Date(y,m-1,1).toLocaleDateString("en-US",{month:"long",year:"numeric"});
   const M=$("monsum");M.innerHTML="";
   const tot={};kinds().forEach(k=>tot[k]={a:0,o:0});
   rows.filter(r=>r.date&&r.date.slice(0,7)===mon).forEach(r=>{const t=tot[r.kind]||(tot[r.kind]={a:0,o:0});if(r.type==="arpan")t.o+=r.count;else t.a+=r.count});
-  Object.keys(tot).forEach(k=>{const d=document.createElement("div");d.className="row";d.innerHTML='<span class="n"></span><span></span>';d.children[0].textContent=k;d.children[1].textContent="Added "+tot[k].a+unit(k)+" · Offered "+tot[k].o+unit(k);M.appendChild(d)});
+  Object.keys(tot).forEach(k=>{
+    const d=document.createElement("div");d.className="row";d.innerHTML='<span class="n"></span><span></span>';
+    d.children[0].textContent=k;d.children[1].textContent="Added "+tot[k].a+unit(k)+" · Offered "+tot[k].o+unit(k);M.appendChild(d);
+  });
 }
 function shiftMonth(n){const [y,m]=mon.split("-").map(Number);const d=new Date(y,m-1+n,1);mon=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");renderMonth()}
 
+/* ---------- actions ---------- */
 async function add(type,k,count,date){
   const id="e"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
   await db.doc("log/"+id).set({type,kind:k,count,date,createdAt:new Date().toISOString()});
 }
-
 $("dt").onchange=()=>{sel=$("dt").value||today()};
 
 $("save").onclick=async()=>{
-  if(!db)return alert("Database is not available");
+  if(!db)return alert("Not connected yet");
   const inputs=[...document.querySelectorAll("#fields input")];
   const items=inputs.map(i=>({k:i.dataset.k,c:parseInt(i.value,10)})).filter(x=>x.c>0);
   if(!items.length)return alert("Enter a count for at least one item");
   const date=sel;
   inputs.forEach(i=>i.value="");
-  try{
-    await Promise.all(items.map(x=>add("entry",x.k,x.c,date)));
-    sel=today();renderStrip(true);
-    $("status").textContent="Saved: "+items.map(x=>x.k+" "+x.c+unit(x.k)).join(", ");
-  }catch(e){
-    items.forEach(x=>{const i=inputs.find(n=>n.dataset.k===x.k);if(i)i.value=x.c});
-    alert("Save failed, please try again");
-  }
+  for(const x of items)await add("entry",x.k,x.c,date);
+  sel=today();$("dt").value=sel;
+  $("status").textContent="Entered: "+items.map(x=>x.k+" "+x.c+unit(x.k)).join(", ");
 };
 
 async function arpan(k,c,have,inp){
+  if(!db)return alert("Not connected yet");
   if(!c||c<1)return alert("Enter a count to offer");
   if(c>have&&!confirm("This is more than your balance. Continue?"))return;
-  try{await add("arpan",k,c,today());inp.value=""}catch(e){alert("Save failed")}
+  await add("arpan",k,c,today());inp.value="";
 }
 
-render();renderStrip(true);
+function toCsv(){return ["id,date,type,kind,count,createdAt",...rows.map(r=>[r.id,r.date,r.type,r.kind,r.count,r.createdAt||""].join(","))].join("\n")}
+$("dl").onclick=()=>{
+  const blob=new Blob([toCsv()],{type:"text/csv"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="bhajan-data-"+today()+".csv";
+  document.body.appendChild(a);a.click();a.remove();
+};
+$("ld").onclick=()=>$("fi").click();
+$("fi").onchange=async e=>{
+  const f=e.target.files[0];e.target.value="";
+  if(!f||!db)return;
+  const lines=(await f.text()).split(/\r?\n/).slice(1).filter(Boolean);let n=0;
+  for(const ln of lines){
+    const [id,date,type,kind,count,createdAt]=ln.split(",");const c=parseInt(count,10);
+    if(!id||!date||!kind||!c||!["entry","arpan"].includes(type))continue;
+    await db.doc("log/"+id).set({type,kind,count:c,date,createdAt:createdAt||""});n++;
+  }
+  say(n+" rows loaded from CSV. Saving…");
+};
+$("sync").onclick=async()=>{
+  if(!db)return;
+  try{await db.flush();await db.load();if(!db.pendingCount())say("Synced with Google Sheet ✓","ok")}
+  catch(e){say("Cannot connect: "+e.message,"err")}
+};
+window.addEventListener("beforeunload",e=>{if(db&&db.pendingCount()){e.preventDefault();e.returnValue=""}});
+
+/* ---------- start ---------- */
+render();
 (async()=>{
-  if(SHEET_URL.startsWith("PASTE")){$("bal").innerHTML='<div class="msg">Add your Google web app URL in index.html first.</div>';say("Not connected yet.");return}
   db=sheetDb(SHEET_URL);
   db.collection("log").onSnapshot(s=>{
     rows=s.docs.map(d=>{const v=d.data();return {id:d.id,...v,kind:LEGACY[v.kind]||v.kind}});
     render();
   });
-  try{await db.load();say("Loaded from Google Sheet")}catch(e){say("Could not load ("+e.message+"). Check the URL.")}
+  try{await db.load();say("Connected to Google Sheet ✓","ok")}
+  catch(e){say("Cannot connect to Google Sheet ("+e.message+"). Check that the link is right and access is set to Anyone.","err")}
+  db.start();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)db.load().catch(()=>{})});
   setInterval(()=>{if(!document.hidden)db.load().catch(()=>{})},30000);
 })();
