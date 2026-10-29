@@ -82,6 +82,11 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;
   <p class="mute" id="note"></p>
   <div class="tw"><table><thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Count</th></tr></thead><tbody id="tb"></tbody></table></div>
 </section>
+<section class="card" style="grid-column:1/-1">
+  <h2>Settings (token, once on each device)</h2>
+  <label for="gt">GitHub token</label><input id="gt" type="password" autocomplete="off">
+  <button class="btn" id="gs">Save settings</button>
+</section>
 </div>
 
 <script>
@@ -152,14 +157,54 @@ function render(){
 }
 
 const unit=k=>k==="Smaran Dhun"?" min":"";
-function localDb(){
-  const K="bhajan_log";
-  const get=()=>{try{return JSON.parse(localStorage.getItem(K))||{}}catch(e){return {}}};
-  const put=o=>{try{localStorage.setItem(K,JSON.stringify(o))}catch(e){}};
-  const subs=[];
-  const emit=()=>{const o=get();const snap={docs:Object.keys(o).map(id=>({id,data:()=>o[id]}))};subs.forEach(f=>f(snap))};
-  return {doc:p=>{const id=p.split("/")[1];return {set:async d=>{const o=get();o[id]=d;put(o);emit()},delete:async()=>{const o=get();delete o[id];put(o);emit()}}},
-    collection:()=>({onSnapshot:f=>{subs.push(f);emit();return ()=>{}}})};
+const say=t=>{$("note").textContent=t};
+// GitHub file where all data is kept. Change these 3 lines only if your names change.
+const GH={owner:"tirthraj05",repo:"Bhajan-Trecker",path:"bhajan-data-2026-10-29.csv"};
+function getCfg(){let t="";try{t=(JSON.parse(localStorage.getItem("bhajan_gh"))||{}).token||""}catch(e){}return {...GH,token:t}}
+function ghDb(cfg){
+  const API="https://api.github.com/repos/"+cfg.owner+"/"+cfg.repo+"/contents/"+cfg.path;
+  const H={"Accept":"application/vnd.github+json"};if(cfg.token)H.Authorization="Bearer "+cfg.token;
+  const noTok=()=>{say("Read only. Add your token in Settings (bottom) to save.");alert("Add your GitHub token in Settings at the bottom to save data.")};
+  let map={},pending=[],timer=null,busy=false,retried=false;const subs=[];
+  try{map=JSON.parse(localStorage.getItem("bhajan_cache"))||{}}catch(e){}
+  const emit=()=>{try{localStorage.setItem("bhajan_cache",JSON.stringify(map))}catch(e){}const s={docs:Object.keys(map).map(id=>({id,data:()=>map[id]}))};subs.forEach(f=>f(s))};
+  const b64=s=>btoa(unescape(encodeURIComponent(s)));
+  const unb64=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,""))));
+  const parse=t=>{const o={};t.split(/\r?\n/).slice(1).filter(Boolean).forEach(l=>{const [id,date,type,kind,count,createdAt]=l.split(",");const c=parseInt(count,10);if(id&&date&&kind&&c&&(type==="entry"||type==="arpan"))o[id]={type,kind,count:c,date,createdAt:createdAt||""}});return o};
+  const csv=o=>["id,date,type,kind,count,createdAt",...Object.keys(o).map(id=>{const r=o[id];return [id,r.date,r.type,r.kind,r.count,r.createdAt||""].join(",")})].join("\n")+"\n";
+  async function pull(){
+    const r=await fetch(API+"?t="+Date.now(),{headers:H,cache:"no-store"});
+    if(r.status===404)return {o:{},sha:null};
+    if(!r.ok)throw new Error(r.status);
+    const j=await r.json();return {o:parse(unb64(j.content)),sha:j.sha};
+  }
+  async function flush(){
+    if(busy||!pending.length)return;busy=true;say("Saving to GitHub…");
+    const ops=pending;pending=[];
+    try{
+      for(let t=0;t<3;t++){
+        const {o,sha}=await pull();
+        ops.forEach(op=>{if(op.del)delete o[op.id];else o[op.id]=op.d});
+        const body={message:"Update data",content:b64(csv(o))};if(sha)body.sha=sha;
+        const r=await fetch(API,{method:"PUT",headers:H,body:JSON.stringify(body)});
+        if(r.ok){map=o;emit();say("Saved to GitHub");busy=false;retried=false;if(pending.length)sched();return}
+        if(r.status!==409&&r.status!==422)throw new Error(r.status);
+      }
+      throw new Error("conflict");
+    }catch(e){
+      pending=ops.concat(pending);busy=false;
+      say("Save failed ("+e.message+"). Check Settings. Will retry.");
+      if(!retried){retried=true;setTimeout(flush,5000)}
+    }
+  }
+  const sched=()=>{clearTimeout(timer);timer=setTimeout(flush,700)};
+  return {
+    doc:p=>{const id=p.split("/")[1];return {
+      set:async d=>{if(!cfg.token)return noTok();map[id]=d;pending.push({id,d});emit();sched()},
+      delete:async()=>{if(!cfg.token)return noTok();delete map[id];pending.push({id,del:1});emit();sched()}}},
+    collection:()=>({onSnapshot:f=>{subs.push(f);emit();return ()=>{}}}),
+    load:async()=>{const {o}=await pull();if(!pending.length&&!busy){map=o;emit()}}
+  };
 }
 function renderTable(){
   const T=$("tb");T.innerHTML="";
@@ -231,13 +276,17 @@ async function arpan(k,c,have,inp){
 
 render();renderStrip(true);
 (async()=>{
-  try{db=await claude.use("db")}catch(e){db=null}
-  if(!db){db=localDb();$("note").textContent="Data is saved in this browser only. Use Download CSV for a backup, and Load from CSV file to bring data into another device."}
-  else{$("note").textContent="Use Download CSV anytime to keep a backup copy of all your data."}
+  const cfg=getCfg();
+  $("gt").value=cfg.token;
+  $("gs").onclick=()=>{try{localStorage.setItem("bhajan_gh",JSON.stringify({token:$("gt").value.trim()}))}catch(e){}location.reload()};
+  db=ghDb(cfg);
   db.collection("log").onSnapshot(s=>{
     rows=s.docs.map(d=>{const v=d.data();return {id:d.id,...v,kind:LEGACY[v.kind]||v.kind}});
     render();
-  },e=>{$("bal").innerHTML='<div class="msg">Could not load data</div>'});
+  });
+  try{await db.load();say("Loaded from GitHub")}catch(e){say("Could not load from GitHub ("+e.message+"). Check Settings.")}
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)db.load().catch(()=>{})});
+  setInterval(()=>{if(!document.hidden)db.load().catch(()=>{})},30000);
 })();
 </script>
 </body>
