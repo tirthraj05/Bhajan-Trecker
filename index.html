@@ -67,6 +67,7 @@ select{padding:11px;font:inherit;color:var(--ink);background:var(--bg);border:1p
   <button class="tab" id="tab-goals">Goals</button>
 </nav>
 <div class="conn" id="conn">Connecting…</div>
+<a id="testlink" href="#" target="_blank" rel="noopener" hidden style="display:block;text-align:center;margin:-8px 0 16px;font-size:.9rem;color:var(--acc)">Open the Google link in a new tab to test it</a>
 
 <!-- ================= DAILY LEDGER ================= -->
 <div id="v-main">
@@ -181,8 +182,21 @@ function sheetDb(url){
       document.head.appendChild(sc);
     });
   }
+  async function viaFetch(params){
+    const q=Object.keys(params).map(k=>k+"="+encodeURIComponent(params[k])).join("&");
+    const r=await fetch(url+"?"+q+"&t="+Date.now());
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    return await r.json();
+  }
+  async function call(params){
+    try{return await jsonp(params)}
+    catch(e1){
+      try{return await viaFetch(params)}
+      catch(e2){throw new Error(e1.message+" | "+e2.message)}
+    }
+  }
   async function pull(){
-    const j=await jsonp({all:1});
+    const j=await call({all:1});
     if(j.error)throw new Error(j.error);
     v2=j.v===2;
     const o={log:{},goals:{},glog:{}};
@@ -200,7 +214,7 @@ function sheetDb(url){
       const chunks=[];let cur=[];
       wire.forEach(op=>{const t=[...cur,op];if(cur.length&&encodeURIComponent(JSON.stringify(t)).length>1700){chunks.push(cur);cur=[op]}else cur=t});
       if(cur.length)chunks.push(cur);
-      for(const c of chunks){const j=await jsonp({ops:JSON.stringify(c)});if(!j.ok)throw new Error(j.error||"Sheet error")}
+      for(const c of chunks){const j=await call({ops:JSON.stringify(c)});if(!j.ok)throw new Error(j.error||"Sheet error")}
       const last={};ops.forEach(op=>last[op.c+"/"+op.id]=op);
       let o=null,ok=false;
       for(let t=0;t<5&&!ok;t++){
@@ -545,12 +559,15 @@ showTab();render();
 (async()=>{
   db=sheetDb(SHEET_URL);
   db.subscribe(onState);
-  const reload=()=>db.load().then(()=>{$("gwarn").hidden=db.isV2()});
+  const reload=()=>db.load().then(()=>{$("gwarn").hidden=db.isV2();$("testlink").hidden=true});
   try{
     await reload();
     if(db.isV2())say("Connected to Google Sheet ✓","ok");
     else say("Connected, but the Google Apps Script is the old version. Goals need the new Code.gs (see the Goals tab).","err");
-  }catch(e){say("Cannot connect to Google Sheet ("+e.message+"). Check that the link is right and access is set to Anyone.","err")}
+  }catch(e){
+    say("Cannot connect to Google Sheet ("+e.message+"). Check that the link is right and access is set to Anyone.","err");
+    $("testlink").href=SHEET_URL+"?all=1";$("testlink").hidden=false;
+  }
   db.start();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)reload().catch(()=>{})});
   setInterval(()=>{if(!document.hidden)reload().catch(()=>{})},30000);
