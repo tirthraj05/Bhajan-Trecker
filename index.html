@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Bhajan Ledger</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#fdf6ec;--card:#fff;--ink:#3b2a1a;--mute:#8a7560;--acc:#d9691e;--acc2:#fbe3cf;--line:#ecdcc8;--ok:#2e7d4f;--err:#c62828}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#1b1510;--card:#261e17;--ink:#f3e8da;--mute:#b3a08a;--acc:#f08a3c;--acc2:#3a2a1c;--line:#3a2e22;--ok:#6fcf97;--err:#ff8a80}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#1b1510;--card:#261e17;--ink:#f3e8da;--mute:#b3a08a;--acc:#f08a3c;--acc2:#3a2a1c;--line:#3a2e22;--ok:#6fcf97;--err:#ff8a80}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+h1{margin:4px 0;font-size:1.6rem;text-align:center;letter-spacing:.5px}
+h2{margin:0 0 10px;font-size:1.1rem;color:var(--acc)}
+.tabs{display:flex;gap:8px;justify-content:center;margin:10px 0 14px}
+.tab{padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.tab.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.conn{text-align:center;font-size:.9rem;padding:8px 12px;border-radius:10px;background:var(--acc2);color:var(--ink);margin-bottom:16px}
+.conn.ok{color:var(--ok)}.conn.err{color:var(--err)}
+.cols{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:760px){.cols{grid-template-columns:minmax(0,3fr) minmax(0,2fr);align-items:start}.full{grid-column:1/-1}}
+.stack{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+label{display:block;font-size:.85rem;color:var(--mute);margin:10px 0 4px}
+input{width:100%;padding:11px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.btn{width:100%;margin-top:14px;padding:12px;border:0;border-radius:10px;background:var(--acc);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.btn.sm{width:auto;margin:0;padding:8px 12px}
+.btn.ghost{background:var(--acc2);color:var(--ink)}
+.row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.row .n{flex:1}.row .num{font-size:1.4rem;font-weight:700;color:var(--ok);min-width:2ch;text-align:right}
+.row input{width:80px;padding:8px}
+.hist{max-height:260px;overflow-y:auto}
+.h{display:flex;justify-content:space-between;gap:8px;font-size:.9rem;padding:6px 0;border-bottom:1px dashed var(--line)}
+.h button{border:0;background:none;color:var(--mute);cursor:pointer;font-size:1rem}
+.mute{color:var(--mute);font-size:.85rem}
+.msg{text-align:center;color:var(--mute);padding:20px}
+.mon{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.mon b{font-size:1rem}
+table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:600}
+.tw{overflow:auto;max-height:320px}.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.gh{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.gh h3{margin:0;font-size:1.1rem}
+.gh button{border:0;background:none;color:var(--mute);cursor:pointer;font-size:1.1rem}
+.gk{margin-top:10px;font-size:.9rem;display:flex;justify-content:space-between;gap:8px}
+.pb{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:4px 0}
+.pb>i{display:block;height:100%;background:var(--acc);border-radius:99px}
+.pb.done>i{background:var(--ok)}
+.congrats{background:var(--ok);color:#fff;border-radius:10px;padding:10px;text-align:center;font-weight:600;margin-top:12px}
+.ended{background:var(--acc2);border-radius:10px;padding:8px;text-align:center;margin-top:12px;font-size:.9rem}
+.gf{margin-top:14px;padding-top:6px;border-top:1px solid var(--line)}
+.gf h4{margin:8px 0 0;font-size:.95rem;color:var(--acc)}
+details{margin-top:12px;font-size:.9rem}summary{cursor:pointer;color:var(--mute)}
+.addrow,.fld{display:flex;gap:8px;margin-top:6px}.addrow input,.fld input{flex:1;min-width:0}
+select{padding:11px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px}
+textarea{width:100%;padding:11px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;resize:vertical;min-height:110px}
+.ndate{display:flex;align-items:center;gap:8px}.ndate .mid{flex:1;text-align:center;cursor:pointer}.ndate .mid b{display:block;font-size:1.05rem}.ndate .mid small{color:var(--mute)}
+.arrow{width:42px;height:42px;border-radius:50%;background:var(--acc2);color:var(--ink);border:0;font-size:1.3rem;cursor:pointer}.arrow:disabled{opacity:.35}
+.npb{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:12px}.npb>i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--acc),#f59e0b);transition:width .6s cubic-bezier(.2,.9,.3,1)}.npb>i.full{background:linear-gradient(90deg,#16a34a,#4ade80)}
+.nmeta{display:flex;justify-content:space-between;color:var(--mute);font-size:.85rem;margin-top:6px}
+.nc h2{margin:0 0 2px}.nc .hint{color:var(--mute);font-size:.85rem;margin:0 0 12px}
+.nc .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#fff;font-size:.8rem;margin-right:8px}
+.prow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}.prow:last-child{border:0}
+.pn{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--acc),#f59e0b);color:#fff;display:grid;place-items:center;font-weight:800;flex:none}
+.pname{flex:1;min-width:0;font-weight:600}
+.stars{display:flex;gap:2px}.star{border:0;background:none;font-size:1.75rem;line-height:1;color:var(--line);cursor:pointer;padding:0 2px;transition:transform .15s,color .2s}
+.star.on{color:#f59e0b;text-shadow:0 0 10px rgba(245,158,11,.45)}.star:active{transform:scale(1.35)}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}
+.sant{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 8px;border-radius:16px;border:2px solid transparent;background:var(--bg);cursor:pointer;color:var(--ink);font:inherit;transition:transform .15s,border-color .2s,background .2s}
+.sant:hover{transform:translateY(-2px)}.sant:active{transform:scale(.95)}
+.sav{position:relative;width:62px;height:62px;border-radius:50%;overflow:hidden;display:grid;place-items:center;font-weight:800;color:#fff;font-size:1.4rem;transition:box-shadow .2s}
+.sav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sant small{font-weight:600;text-align:center;line-height:1.2;font-size:.78rem}
+.sant.on{border-color:var(--ok);background:rgba(34,197,94,.12)}.sant.on .sav{box-shadow:0 0 0 3px var(--ok)}
+.sant.on::after{content:"\2713";position:absolute;margin-top:-4px;margin-left:46px;width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;font-size:.8rem;display:grid;place-items:center;animation:npop .3s}
+@keyframes npop{from{transform:scale(0)}}
+.sant{position:relative}
+.scount{font-weight:700;color:var(--ok);margin:12px 0 4px}
+.prs{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:.88rem}.prs span{min-width:84px;font-weight:600}
+.yn{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.yn button{padding:14px;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-weight:800;cursor:pointer;transition:transform .15s,background .2s}.yn button:active{transform:scale(.95)}
+.yn .y.on{background:#16a34a;color:#fff;border-color:transparent}.yn .n.on{background:#ef4444;color:#fff;border-color:transparent}
+.kw{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.kw button{padding:7px 14px;border-radius:99px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;transition:.2s}.kw button.on{background:var(--acc);color:#fff;border-color:transparent}
+.kadd{display:flex;gap:8px;margin-top:10px}.kadd input{flex:1}.kadd button{padding:0 16px;border-radius:10px;border:0;background:var(--acc2);color:var(--ink);font-weight:700;cursor:pointer}
+.bigpct{text-align:center;font-size:2.6rem;font-weight:900;font-variant-numeric:tabular-nums;background:linear-gradient(90deg,var(--acc),#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent}
+input[type=range]{width:100%;accent-color:var(--acc);padding:0;border:0;background:none}
+.qp{display:flex;gap:8px;justify-content:center;margin-top:8px}.qp button{padding:6px 14px;border-radius:99px;border:0;background:var(--acc2);color:var(--ink);font-weight:700;cursor:pointer}
+.nsum{overflow-x:auto}.nsum table{width:100%;border-collapse:collapse;font-size:.85rem;white-space:nowrap}.nsum th,.nsum td{text-align:center;padding:7px 6px;border-bottom:1px solid var(--line)}.nsum th{color:var(--mute);font-weight:600}.nsum td:first-child,.nsum th:first-child{text-align:left}
+.nsum tr.row{cursor:pointer}.nsum tr.row:hover{background:var(--acc2)}.nsum .y{color:var(--ok);font-weight:800}.nsum .no{color:var(--err);font-weight:800}
+.nsaved{font-size:.85rem;color:var(--mute)}
+.sant small{word-break:break-word;hyphens:auto}
+.tabs{flex-wrap:wrap}
+.atiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.tile{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center}
+.tile b{display:block;font-size:1.35rem;color:var(--acc);font-variant-numeric:tabular-nums}.tile span{font-size:.78rem;color:var(--mute)}
+.arange{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.arange select,.arange input{width:auto;flex:none}
+.adet{white-space:normal;text-align:left;position:sticky;left:0;width:calc(100vw - 80px);max-width:620px;padding:6px 2px}
+.adet .al{margin:4px 0;font-size:.88rem}
+.adsg{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.chip{display:flex;align-items:center;gap:6px;background:var(--acc2);border-radius:99px;padding:3px 10px 3px 3px;font-size:.8rem}
+.chip img{width:28px;height:28px;border-radius:50%;object-fit:cover}
+.adsukh{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:4px}
+.ssrow{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}.ssrow:last-child{border:0}
+.ssrow img,.ssrow .ph{width:48px;height:48px;border-radius:50%;object-fit:cover;flex:none;background:var(--acc2)}
+.ssrow .cn{margin-left:auto;font-weight:800;color:var(--ok);white-space:nowrap}
+.nsum tr.dtl:hover{background:none}.nsum tr.dtl td{text-align:left;white-space:normal}
+.nsum td.fx{font-size:.8rem}
+.nsum tr.row{display:table-row;padding:0;gap:0}.nsum tr.row:last-child{border:0}
+a.back{display:block;text-align:center;color:var(--mute);font-size:.85rem;margin-top:2px}
+.qh{margin-top:10px}
+.hfld{display:flex;gap:8px;align-items:center;justify-content:center}.hfld input{width:120px;text-align:center;font-size:1.3rem;font-weight:800}
+.gtitle{margin:0 0 10px;font-size:1.1rem;color:var(--acc)}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>My Bhajan Ledger</h1>
+<nav class="tabs">
+  <button class="tab on" id="tab-main">Daily Ledger</button>
+  <button class="tab" id="tab-niyam">Niyam</button>
+</nav>
+<div class="conn" id="conn">Connecting…</div>
+
+<!-- ================= DAILY LEDGER ================= -->
+<div id="v-main">
+<div id="agoalswrap" hidden style="margin-bottom:16px">
+  <h2 class="gtitle">Goals</h2>
+  <div class="conn err" id="gwarn" hidden style="margin:0 0 12px">Goals cannot be saved yet because your Google Apps Script is still the old version. Open Apps Script, paste the new Code.gs, then Deploy &gt; Manage deployments &gt; pencil &gt; Version: New version &gt; Deploy.</div>
+  <div class="stack" id="goals"></div>
+</div>
+<div class="cols">
+<section class="card">
+  <h2>Add Entry</h2>
+  <div id="fields"></div>
+  <label for="dt">Date</label>
+  <input id="dt" type="date">
+  <button class="btn" id="save">Save Entry</button>
+  <p class="mute" id="status"></p>
+</section>
+
+<aside>
+  <section class="card">
+    <h2>My Balance</h2>
+    <div id="bal"><div class="msg">Loading…</div></div>
+    <p class="mute">Enter a number and press Offer to give it to God. It is deducted from the balance.</p>
+  </section>
+  <section class="card" style="margin-top:16px">
+    <h2>Monthly Summary</h2>
+    <div class="mon"><button class="btn sm ghost" onclick="shiftMonth(-1)">&lsaquo;</button><b id="monname"></b><button class="btn sm ghost" onclick="shiftMonth(1)">&rsaquo;</button></div>
+    <div id="monsum"></div>
+  </section>
+  <section class="card" style="margin-top:16px">
+    <h2>History</h2>
+    <div class="hist" id="hist"></div>
+  </section>
+</aside>
+
+<section class="card full">
+  <h2>Data Table</h2>
+  <div class="bar">
+    <button class="btn sm" id="sync">Sync now</button>
+    <button class="btn sm ghost" id="dl">Download CSV</button>
+    <button class="btn sm ghost" id="ld">Load from CSV file</button>
+    <input id="fi" type="file" accept=".csv,text/csv" style="display:none">
+  </div>
+  <div class="tw"><table><thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Count</th></tr></thead><tbody id="tb"></tbody></table></div>
+</section>
+</div>
+</div>
+
+<!-- ================= NIYAM ================= -->
+<div id="v-niyam" hidden>
+<div class="stack">
+  <div class="conn err" id="nwarn" hidden style="margin:0">The Niyam page cannot be saved yet because your Google Apps Script is the old version. Open Apps Script, paste the new Code.gs, then Deploy &gt; Manage deployments &gt; pencil &gt; Version: New version &gt; Deploy.</div>
+  <section class="card">
+    <div class="ndate"><button class="arrow" id="nprev">&lsaquo;</button><div class="mid" id="ndatebox"><b id="ndatetxt"></b><small>tap to pick a date</small></div><button class="arrow" id="nnext">&rsaquo;</button></div>
+    <input id="ndatein" type="date" style="margin-top:8px" hidden>
+    <div class="npb"><i id="nbar"></i></div>
+    <div class="nmeta"><span id="ncount"></span><span class="nsaved" id="nsaved"></span></div>
+  </section>
+
+  <section class="card nc"><h2><span class="num">1</span>5 Mansi</h2><p class="hint">Darek mansi ne 5 star ma rating aapo.</p><div id="npersons"></div></section>
+
+  <section class="card nc"><h2><span class="num">2</span>Santo na darshan ane prasadi</h2><p class="hint">Je santo na darshan karya e dabavo. Prasadi ma je vastu malli e lakho.</p>
+    <input id="nsq" placeholder="Santo shodho… (naam lakho)" style="margin-bottom:10px"><div class="sgrid" id="nsgrid"></div><div class="scount" id="nscount"></div><div id="nsprs"></div></section>
+
+  <section class="card nc"><h2><span class="num">3</span>Raatre Bhagwan no mahima vichar</h2><p class="hint">Aaje Bhagwan no mahima vicharyo? Jo ha, to keyword pasand karo.</p>
+    <div class="yn" id="nmahima"></div>
+    <div id="nmwrap" hidden><div class="kw" id="nwords"></div><div class="kadd"><input id="nwnew" placeholder="Navo keyword (jem ke Karta – Karavnar)" maxlength="40"><button id="nwadd">Add</button></div></div></section>
+
+  <section class="card nc"><h2><span class="num">4</span>Arpan</h2><p class="hint">Aakha divas ma karelu bhajan Bhagwan ne arpan karyu?</p><div class="yn" id="narpan"></div></section>
+
+  <section class="card nc"><h2><span class="num">5</span>Thank you / krutagnata</h2><p class="hint">Bhagwan ne thank you kahyu, ke koi vyakti pratye krutagnata vyakt kari (kone help nu thank you kidhu)?</p>
+    <div class="yn" id="nthanks"></div><input id="nthanksto" placeholder="Kone? (optional)" maxlength="80" style="margin-top:10px" hidden></section>
+
+  <section class="card nc"><h2><span class="num">6</span>Tratak dhyan</h2><p class="hint">Aaje tratak dhyan kevu thayu?</p><div class="stars" id="ntratak"></div></section>
+
+  <section class="card nc"><h2><span class="num">7</span>Bhagwan nu dhyan</h2><p class="hint">Aaje Bhagwan nu dhyan kevu thayu?</p><div class="stars" id="ndhyan"></div></section>
+
+  <section class="card nc"><h2><span class="num">8</span>Smaran</h2><p class="hint">Aaje smaran keta takaa (100 maathi) thayu?</p>
+    <div class="bigpct" id="nsmtxt">&mdash;</div><input type="range" id="nsmaran" min="0" max="100" step="1" value="0">
+    <div class="qp"><button data-v="25">25</button><button data-v="50">50</button><button data-v="75">75</button><button data-v="100">100</button><button data-v="">Clear</button></div></section>
+
+  <section class="card nc"><h2><span class="num">9</span>Hari sathe vato</h2><p class="hint">Aaje Hari sathe ketlo samay (minit ma) vato thai?</p>
+    <div class="bigpct" id="nhtxt">&mdash;</div>
+    <div class="hfld"><input id="nhari" type="number" min="0" max="1440" inputmode="numeric" placeholder="Minit"><span class="mute">minit</span></div>
+    <div class="qp qh"><button data-v="5">5</button><button data-v="10">10</button><button data-v="15">15</button><button data-v="30">30</button><button data-v="60">60</button><button data-v="">Clear</button></div></section>
+
+  <section class="card nc"><h2><span class="num">10</span>Biju sukh</h2><p class="hint">Aakha divas ma Bhagwan ane Santo sivay ketlu sukh biju lidhu? Roj lakho.</p>
+    <textarea id="nsukh" maxlength="3000" placeholder="Ahiya lakho…"></textarea></section>
+
+  <section class="card nc"><h2>Chhela 7 divas</h2><p class="hint">Koi divas par dabavo to e divas khulse.</p><div class="nsum" id="nsum"></div></section>
+</div>
+</div>
+</div>
+
+<script>
+// Your Google Apps Script web app link (all data is stored in the linked Google Sheet)
+const SHEET_URL="https://script.google.com/macros/s/AKfycbxGHyTeWsDm6IsjvlLl-dOLtMyIFVCDgIXQmKT88SUMoAY41r66yjQU0QlAvAxt0LQUYg/exec";
+
+const DEFAULT_KINDS=["Dandvat","Parikrama","Smaran Dhun","Kirtan"];
+const LEGACY={"દંડવત":"Dandvat","પરિક્રમા":"Parikrama","સ્મરણ ધૂન":"Smaran Dhun","કીર્તન":"Kirtan"};
+const COLL_SHEET={log:"Data",goals:"Goals",glog:"GoalLog",niyam:"Niyam"};
+const HARI_TAG="@hari=";   // minutes of "Hari sathe vato" are kept inside the existing "words" column, so Code.gs needs no change
+const NIYAM_FIELDS=["date","persons","santo","mahima","words","arpan","thanks","thanksTo","tratak","dhyan","smaran","sukh","updatedAt"];
+let db=null,rows=[],goals=[],glog=[];
+const $=id=>document.getElementById(id);
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const today=()=>iso(new Date());
+const unit=k=>k==="Smaran Dhun"?" min":"";
+const kindLabel=k=>k==="Smaran Dhun"?"Smaran Dhun (minutes)":k;
+const say=(t,c)=>{const e=$("conn");if(!e)return;e.textContent=t;e.className="conn "+(c||"")};
+const show=id=>{const e=$(id);if(e)e.hidden=false};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const rid=()=>Date.now()+"-"+Math.random().toString(36).slice(2,8);
+const clean=s=>String(s).replace(/[;=,|]/g," ").replace(/\s+/g," ").trim();
+const UN={count:{suf:"",ph:"Count",tph:"Total count",lab:""},min:{suf:" min",ph:"Minutes",tph:"Total minutes",lab:" (minutes)"},hr:{suf:" hr",ph:"Hours",tph:"Total hours",lab:" (hours)"}};
+const r2=n=>Math.round(n*100)/100;
+const num=(v,u)=>{const n=u==="hr"?parseFloat(v):parseInt(v,10);return isFinite(n)?r2(n):NaN};function kinds(){const s=new Set(DEFAULT_KINDS);rows.forEach(r=>s.add(r.kind));return [...s]}
+
+/* ---------- storage: Google Sheet through Apps Script ---------- */
+function sheetDb(url){
+  let st={log:{},goals:{},glog:{},niyam:{}},pending=[],timer=null,busy=false,fails=0,v2=false,hasN=false,jid=0;const subs=[];
+  try{const c=JSON.parse(localStorage.getItem("bhajan_cache3"));if(c&&c.log&&c.goals&&c.glog&&c.niyam)st=c}catch(e){}
+  try{pending=JSON.parse(localStorage.getItem("bhajan_pending2"))||[]}catch(e){}
+  const savePend=()=>{try{localStorage.setItem("bhajan_pending2",JSON.stringify(pending))}catch(e){}};
+  const emit=()=>{try{localStorage.setItem("bhajan_cache3",JSON.stringify(st))}catch(e){}subs.forEach(f=>f(st))};
+  const apply=(o,ops)=>{ops.forEach(op=>{if(op.del)delete o[op.c][op.id];else o[op.c][op.id]=op.d});return o};
+  function jsonp(params){
+    return new Promise((res,rej)=>{
+      const name="__bj"+(++jid)+"_"+Date.now();
+      const sc=document.createElement("script");
+      const cleanup=()=>{clearTimeout(t);delete window[name];sc.remove()};
+      const t=setTimeout(()=>{cleanup();rej(new Error("no reply from Google; check the link and that access is Anyone"))},20000);
+      window[name]=d=>{cleanup();res(d)};
+      sc.onerror=()=>{cleanup();rej(new Error("could not reach Google"))};
+      const q=Object.keys(params).map(k=>k+"="+encodeURIComponent(params[k])).join("&");
+      sc.src=url+"?"+(q?q+"&":"")+"callback="+name+"&t="+Date.now();
+      document.head.appendChild(sc);
+    });
+  }
+  async function viaFetch(params){
+    const q=Object.keys(params).map(k=>k+"="+encodeURIComponent(params[k])).join("&");
+    const r=await fetch(url+"?"+q+"&t="+Date.now());
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    return await r.json();
+  }
+  async function call(params){
+    try{return await jsonp(params)}
+    catch(e1){
+      try{return await viaFetch(params)}
+      catch(e2){throw new Error(e1.message+" | "+e2.message)}
+    }
+  }
+  async function pull(){
+    const j=await call({all:1});
+    if(j.error)throw new Error(j.error);
+    v2=j.v===2;hasN=Array.isArray(j.niyam);
+    const o={log:{},goals:{},glog:{},niyam:{}};
+    (j.rows||[]).forEach(x=>{o.log[x.id]={type:x.type,kind:x.kind,count:x.count,date:x.date,createdAt:x.createdAt}});
+    (j.goals||[]).forEach(x=>{o.goals[x.id]={name:x.name,start:x.start,end:x.end,targets:x.targets,createdAt:x.createdAt}});
+    (j.goalLog||[]).forEach(x=>{o.glog[x.id]={goalId:x.goalId,date:x.date,kind:x.kind,count:x.count,createdAt:x.createdAt}});
+    (j.niyam||[]).forEach(x=>{const d={};NIYAM_FIELDS.forEach(k=>d[k]=x[k]);o.niyam[x.id]=d});
+    return o;
+  }
+  function formPost(body){
+    const n="f"+Date.now(),fr=document.createElement("iframe"),f=document.createElement("form"),ta=document.createElement("textarea");
+    fr.name=n;fr.style.display="none";f.method="POST";f.action=url;f.target=n;f.style.display="none";ta.name="p";ta.value=body;f.appendChild(ta);
+    document.body.append(fr,f);f.submit();setTimeout(()=>{fr.remove();f.remove()},30000);
+  }
+  async function post(wire){
+    const body=JSON.stringify({ops:wire});
+    try{await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body})}
+    catch(e){formPost(body)}
+  }
+  const sameN=(a,b)=>NIYAM_FIELDS.every(k=>String(a[k]==null?"":a[k])===String(b[k]==null?"":b[k]));
+  async function flush(){
+    if(busy||!pending.length)return;
+    busy=true;say("Saving…");
+    const ops=pending.slice();
+    try{
+      const wire=ops.map(op=>op.del?{s:COLL_SHEET[op.c],id:op.id,del:1}:{s:COLL_SHEET[op.c],id:op.id,d:op.d});
+      const big=encodeURIComponent(JSON.stringify(wire)).length>1700;
+      if(big&&fails<2)await post(wire);
+      else{
+        const chunks=[];let cur=[];
+        wire.forEach(op=>{const t=[...cur,op];if(cur.length&&encodeURIComponent(JSON.stringify(t)).length>1700){chunks.push(cur);cur=[op]}else cur=t});
+        if(cur.length)chunks.push(cur);
+        for(const c of chunks){const j=await call({ops:JSON.stringify(c)});if(!j.ok)throw new Error(j.error||"Sheet error")}
+      }
+      const last={};ops.forEach(op=>last[op.c+"/"+op.id]=op);
+      let o=null,ok=false;
+      for(let t=0;t<5&&!ok;t++){
+        await sleep(800);
+        o=await pull();
+        ok=Object.values(last).every(op=>op.del?!o[op.c][op.id]:(op.c==="niyam"?(o.niyam[op.id]&&sameN(o.niyam[op.id],op.d)):!!o[op.c][op.id]));
+      }
+      if(!ok)throw new Error("the Sheet did not receive the data");
+      pending=pending.slice(ops.length);savePend();
+      st=apply(o,pending);emit();fails=0;busy=false;
+      say("Saved to Google Sheet ✓","ok");
+      if(pending.length)sched();
+    }catch(e){
+      busy=false;fails++;
+      say("Not saved yet: "+e.message+". Retrying…","err");
+      if(fails<=5)setTimeout(flush,4000*fails);
+    }
+  }
+  const sched=()=>{clearTimeout(timer);timer=setTimeout(flush,700)};
+  const guard=c=>{
+    if(c==="niyam"){if(!hasN){show("nwarn");return false}return true}
+    if(c!=="log"&&!v2){show("gwarn");return false}
+    return true;
+  };
+  return {
+    subscribe:f=>{subs.push(f);f(st)},
+    set:(c,id,d)=>{if(!guard(c))return false;st[c][id]=d;pending.push({c,id,d});savePend();emit();sched();return true},
+    del:(c,id)=>{if(!guard(c))return false;delete st[c][id];pending.push({c,id,del:1});savePend();emit();sched();return true},
+    load:async()=>{const o=await pull();if(!busy){st=apply(o,pending);emit()}},
+    flush:()=>{fails=0;return flush()},
+    start:()=>{if(pending.length)sched()},
+    pendingCount:()=>pending.length,
+    isV2:()=>v2,
+    isN:()=>hasN
+  };
+}
+
+/* ---------- parse sheet data ---------- */
+function parseState(st){
+  rows=Object.keys(st.log).map(id=>({id,...st.log[id],kind:LEGACY[st.log[id].kind]||st.log[id].kind})).filter(r=>r.type==="entry"||r.type==="arpan");
+  goals=Object.keys(st.goals).map(id=>{
+    const d=st.goals[id],g={id,name:d.name||"",start:d.start,end:d.end,targets:{},units:{}};
+    String(d.targets||"").split(";").forEach(p=>{
+      const i=p.indexOf("=");if(i<1)return;
+      const k=p.slice(0,i).trim(),rest=p.slice(i+1).split("|"),uu=(rest[1]||"").trim();
+      const u=UN[uu]?uu:(k==="Smaran Dhun"?"min":"count"),n=num(rest[0],u);
+      if(n>0){g.targets[k]=n;g.units[k]=u}
+    });
+    return g.start&&g.end&&Object.keys(g.targets).length?g:null;
+  }).filter(Boolean);
+  glog=Object.keys(st.glog).map(id=>({id,...st.glog[id]}));
+}
+
+/* ---------- goals ---------- */
+const dd=(a,b)=>Math.round((Date.parse(b)-Date.parse(a))/864e5);
+const gKinds=g=>Object.keys(g.targets);
+const gu=(g,k)=>UN[g.units[k]||"count"];
+const prog=(g,k)=>r2(glog.filter(x=>x.goalId===g.id&&x.kind===k).reduce((a,x)=>a+x.count,0));
+const perDay=(rem,left,u)=>{const q=u==="hr"?4:1;return Math.ceil(rem/Math.max(left,1)*q)/q};
+const isDone=g=>gKinds(g).every(k=>prog(g,k)>=g.targets[k]);
+const clamp=g=>{const t=today();return t<g.start?g.start:t>g.end?g.end:t};
+let gDate={},gOpen=new Set(),gExtra=[];
+
+const isActive=g=>{const t=today();return t>=g.start&&t<=g.end};
+
+function renderGoals(G,list,o){
+  const keep={};G.querySelectorAll("input[data-g]").forEach(i=>keep[i.dataset.g+"|"+i.dataset.k]=i.value);
+  G.innerHTML="";
+  if(!list.length){G.innerHTML='<div class="card"><p class="mute" style="margin:0">'+(o.empty||"No goal yet.")+'</p></div>';return}
+  const t=today();
+  [...list].sort((a,b)=>b.start.localeCompare(a.start)).forEach(g=>{
+    const ks=gKinds(g),done=isDone(g),days=dd(g.start,g.end)+1;
+    const left=t>g.end?0:(t<g.start?days:dd(t,g.end)+1);
+    const card=document.createElement("section");card.className="card";
+
+    const head=document.createElement("div");head.className="gh";
+    const info=document.createElement("div");
+    const h=document.createElement("h3");h.textContent=g.name||"Goal";
+    const sub=document.createElement("div");sub.className="mute";
+    sub.textContent=g.start+" to "+g.end+" · "+(t<g.start?"starts in "+dd(t,g.start)+" days":t>g.end?"period ended":"day "+(dd(g.start,t)+1)+" of "+days+" · "+left+" days left");
+    info.append(h,sub);
+    const x=document.createElement("button");x.textContent="✕";x.title="Delete goal";
+    x.onclick=()=>{if(confirm("Delete this goal and all its entries?")){glog.filter(e=>e.goalId===g.id).forEach(e=>db.del("glog",e.id));db.del("goals",g.id)}};
+    head.append(info);if(o.admin)head.append(x);card.appendChild(head);
+
+    let met=0;
+    ks.forEach(k=>{
+      const tg=g.targets[k],got=prog(g,k),rem=r2(Math.max(0,tg-got)),U=gu(g,k);
+      if(rem===0)met++;
+      const line=document.createElement("div");line.className="gk";
+      const a=document.createElement("span");a.textContent=k;
+      const b=document.createElement("b");b.textContent=got+" / "+tg+U.suf;
+      line.append(a,b);
+      const pb=document.createElement("div");pb.className="pb"+(rem===0?" done":"");
+      const bar=document.createElement("i");bar.style.width=Math.min(100,Math.round(got/tg*100))+"%";pb.appendChild(bar);
+      const note=document.createElement("div");note.className="mute";
+      note.textContent=rem===0?"Target completed":(t>g.end?"Missed by "+rem+U.suf:"Remaining "+rem+U.suf+(t>=g.start?" · about "+perDay(rem,left,g.units[k])+U.suf+" per day":""));
+      card.append(line,pb,note);
+    });
+    if(done){const c=document.createElement("div");c.className="congrats";c.textContent="Congratulations! You completed all your targets.";card.appendChild(c)}
+    else if(t>g.end){const c=document.createElement("div");c.className="ended";c.textContent="Period ended. "+met+" of "+ks.length+" targets completed.";card.appendChild(c)}
+
+    const f=document.createElement("div");f.className="gf";
+    const fh=document.createElement("h4");fh.textContent="Add entry for this goal";f.appendChild(fh);
+    const dl=document.createElement("label");dl.textContent="Date";
+    const di=document.createElement("input");di.type="date";di.min=g.start;di.max=g.end;di.value=gDate[g.id]||clamp(g);
+    di.onchange=()=>{gDate[g.id]=di.value};
+    f.append(dl,di);
+    const inputs=[];
+    ks.forEach(k=>{
+      const l=document.createElement("label");l.textContent=k+gu(g,k).lab;
+      const i=document.createElement("input");i.type="number";i.min="0";i.inputMode="decimal";
+      i.step=g.units[k]==="hr"?"0.25":"1";i.placeholder=gu(g,k).ph;i.dataset.g=g.id;i.dataset.k=k;i.value=keep[g.id+"|"+k]||"";
+      inputs.push(i);f.append(l,i);
+    });
+    const sb=document.createElement("button");sb.className="btn";sb.textContent="Save Entry";
+    sb.onclick=()=>saveGoalEntry(g,di,inputs);
+    f.appendChild(sb);if(o.form!==false)card.appendChild(f);
+
+    const mine=glog.filter(e=>e.goalId===g.id).sort((a,b)=>(b.date+(b.createdAt||"")).localeCompare(a.date+(a.createdAt||"")));
+    const det=document.createElement("details");det.open=gOpen.has(g.id);
+    const sm=document.createElement("summary");sm.textContent="Entries ("+mine.length+")";det.appendChild(sm);
+    mine.forEach(e=>{
+      const d=document.createElement("div");d.className="h";
+      const s=document.createElement("span");s.textContent=e.date+" · "+e.kind+" +"+e.count+gu(g,e.kind).suf;
+      const xb=document.createElement("button");xb.textContent="✕";xb.title="Delete";
+      xb.onclick=()=>{if(confirm("Delete this entry?"))db.del("glog",e.id)};
+      d.append(s,xb);det.appendChild(d);
+    });
+    det.ontoggle=()=>{if(det.open)gOpen.add(g.id);else gOpen.delete(g.id)};
+    card.appendChild(det);
+    G.appendChild(card);
+  });
+}
+
+function saveGoalEntry(g,di,inputs){
+  if(!db)return alert("Not connected yet");
+  const date=di.value;
+  if(!date||date<g.start||date>g.end)return alert("Pick a date between "+g.start+" and "+g.end);
+  const items=inputs.map(i=>({k:i.dataset.k,c:num(i.value,g.units[i.dataset.k])})).filter(x=>x.c>0);
+  if(!items.length)return alert("Enter a count for at least one item");
+  const was=isDone(g);
+  inputs.forEach(i=>i.value="");
+  for(const x of items){
+    if(!db.set("glog","l"+rid(),{goalId:g.id,date,kind:x.k,count:x.c,createdAt:new Date().toISOString()}))return;
+  }
+  const g2=goals.find(z=>z.id===g.id);
+  if(g2&&!was&&isDone(g2))alert("Congratulations! You completed your goal"+(g2.name?" \""+g2.name+"\"":"")+".");
+}
+
+/* ---------- niyam shared ---------- */
+// ===== You can change these =====
+const NIYAM_PERSONS=["","","","",""];                       // names of the 5 mansi (leave "" to show only 1-5)
+const SANTO=[{name:"જ્ઞાનજીવનદાસજી (ગુરુજી)",img:"sant_01_guruji.jpg"},{name:"નારાયણમુનિદાસજી",img:"sant_02.jpg"},{name:"ધર્મસ્વરૂપદાસજી",img:"sant_03.jpg"},{name:"નિર્મળદાસજી",img:"sant_04.jpg"},{name:"શ્યામચરણદાસજી",img:"sant_05.jpg"},{name:"ઈશ્વરચરણદાસજી",img:"sant_06.jpg"},{name:"નંદકિશોરદાસજી",img:"sant_07.jpg"},{name:"ઘનશ્યામજીવનદાસજી",img:"sant_08.jpg"},{name:"અક્ષરજીવનદાસજી",img:"sant_09.jpg"},{name:"અચ્યુતદાસજી",img:"sant_10.jpg"},{name:"સરજુદાસજી",img:"sant_11.jpg"},{name:"માધવપ્રિયદાસજી",img:"sant_12.jpg"},{name:"નિરંજનદાસજી",img:"sant_13.jpg"},{name:"વિવેકસ્વરૂપદાસજી",img:"sant_14.jpg"},{name:"કૃષ્ણપ્રિયદાસજી",img:"sant_15.jpg"},{name:"શ્રીરંગદાસજી",img:"sant_16.jpg"},{name:"પવિત્રજીવનદાસજી",img:"sant_17.jpg"},{name:"ત્યાગવલ્લભદાસજી",img:"sant_18.jpg"},{name:"સાધુજીવનદાસજી",img:"sant_19.jpg"},{name:"અખિલજીવનદાસજી",img:"sant_20.jpg"},{name:"ભજનપ્રકાશદાસજી",img:"sant_21.jpg"},{name:"સનાતનદાસજી",img:"sant_22.jpg"},{name:"સંતદાસજી",img:"sant_23.jpg"},{name:"ન્યાલકરણદાસજી",img:"sant_24.jpg"},{name:"વિદેહસ્વરૂપદાસજી",img:"sant_25.jpg"},{name:"મંગળસ્વરૂપદાસજી",img:"sant_26.jpg"},{name:"અચલસ્વરૂપદાસજી",img:"sant_27.jpg"},{name:"પુરાતનદાસજી",img:"sant_28.jpg"},{name:"રામદાસજી",img:"sant_29.jpg"},{name:"ઉત્તમચરણદાસજી",img:"sant_30.jpg"},{name:"શ્રીજીસ્વરૂપદાસજી",img:"sant_31.jpg"},{name:"સાકારસ્વરૂપદાસજી",img:"sant_32.jpg"},{name:"આનંદસ્વરૂપદાસજી",img:"sant_33.jpg"},{name:"સદ્રુચિદાસજી",img:"sant_34.jpg"},{name:"અનુવૃત્તિદાસજી",img:"sant_35.jpg"},{name:"વર્ણિવેષદાસજી",img:"sant_36.jpg"},{name:"અનાદિસ્વરૂપદાસજી",img:"sant_37.jpg"},{name:"કારણસ્વરૂપદાસજી",img:"sant_38.jpg"},{name:"આદર્શજીવનદાસજી",img:"sant_39.jpg"},{name:"સદ્ગુણસ્વરૂપદાસજી",img:"sant_40.jpg"},{name:"પ્રસન્નવદનદાસજી",img:"sant_41.jpg"},{name:"ચિન્મયસ્વરૂપદાસજી",img:"sant_42.jpg"},{name:"પ્રત્યક્ષસ્વરૂપદાસજી",img:"sant_43.jpg"},{name:"પરસ્વરૂપદાસજી",img:"sant_44.jpg"},{name:"સંકીર્તનદાસજી",img:"sant_45.jpg"},{name:"અન્વયસ્વરૂપદાસજી",img:"sant_46.jpg"},{name:"હૃદયપ્રકાશદાસજી",img:"sant_47.jpg"},{name:"ઐશ્વર્યપ્રકાશદાસજી",img:"sant_48.jpg"},{name:"હરિગુણદાસજી",img:"sant_49.jpg"},{name:"આત્મીયસ્વરૂપદાસજી",img:"sant_50.jpg"},{name:"મૂર્તિસ્વરૂપદાસજી",img:"sant_51.jpg"},{name:"સહનપ્રિયદાસજી",img:"sant_52.jpg"},{name:"ચતુરભગત",img:"parshad_01.jpg"},{name:"ગિરીશભગત",img:"parshad_02.jpg"},{name:"જયંતિભગત",img:"parshad_03.jpg"},{name:"ધરમભગત",img:"parshad_04.jpg"},{name:"વિનયભગત",img:"parshad_05.jpg"},{name:"પ્રફુલભગત",img:"parshad_06.jpg"},{name:"ધનશ્યામભગત",img:"parshad_07.jpg"},{name:"ધનજીભગત",img:"parshad_08.jpg"},{name:"રાધેશભગત",img:"parshad_09.jpg"}];   // photos are in the snato/ folder; change a name here if it is wrong
+const MAHIMA_WORDS=["Sharir – Shariri","Swami – Sevak","Shesh – Sheshi"];
+// ================================
+const nh=(t,a,...c)=>{const e=document.createElement(t);if(a)for(const k in a){const v=a[k];if(k==="class")e.className=v;else if(k.startsWith("on"))e[k]=v;else if(k==="style")e.style.cssText=v;else if(v!=null)e.setAttribute(k,v)}c.flat().forEach(x=>{if(x==null||x===false)return;e.append(x.nodeType?x:document.createTextNode(x))});return e};
+const NY={map:{},date:today(),cur:null,dirty:false,timer:null,loaded:"",celebrated:false,q:""};
+const nyBlank=()=>({persons:[0,0,0,0,0],santo:{},mahima:"",words:[],arpan:"",thanks:"",thanksTo:"",tratak:0,dhyan:0,smaran:"",hari:"",sukh:""});
+function nyParse(d){
+  const c=nyBlank();if(!d)return c;
+  const ps=String(d.persons||"").split(",").map(x=>parseInt(x,10)||0);for(let i=0;i<5;i++)c.persons[i]=Math.max(0,Math.min(5,ps[i]||0));
+  try{const o=JSON.parse(d.santo||"{}");if(o&&typeof o==="object"&&!Array.isArray(o))c.santo=o}catch(e){}
+  try{const w=JSON.parse(d.words||"[]");if(Array.isArray(w))w.forEach(x=>{x=String(x);if(x.startsWith(HARI_TAG))c.hari=String(Math.max(0,Math.min(1440,parseInt(x.slice(HARI_TAG.length),10)||0)));else c.words.push(x)})}catch(e){}
+  c.mahima=d.mahima==="Y"||d.mahima==="N"?d.mahima:"";c.arpan=d.arpan==="Y"||d.arpan==="N"?d.arpan:"";c.thanks=d.thanks==="Y"||d.thanks==="N"?d.thanks:"";
+  c.thanksTo=String(d.thanksTo||"");c.tratak=parseInt(d.tratak,10)||0;c.dhyan=parseInt(d.dhyan,10)||0;
+  c.smaran=d.smaran===""||d.smaran==null?"":String(Math.max(0,Math.min(100,parseInt(d.smaran,10)||0)));c.sukh=String(d.sukh||"");
+  return c;
+}
+const nyDoc=c=>({date:NY.date,persons:c.persons.join(","),santo:JSON.stringify(c.santo),mahima:c.mahima,words:JSON.stringify(c.hari!==""?[...c.words,HARI_TAG+c.hari]:c.words),arpan:c.arpan,thanks:c.thanks,thanksTo:c.thanksTo,tratak:c.tratak?String(c.tratak):"",dhyan:c.dhyan?String(c.dhyan):"",smaran:String(c.smaran),sukh:c.sukh,updatedAt:Date.now()});
+const nyEmpty=c=>JSON.stringify(c)===JSON.stringify(nyBlank());
+const nyKey=c=>JSON.stringify(c);
+function nyDone(c){return [c.persons.every(x=>x>0),Object.keys(c.santo).length>0,c.mahima!=="",c.arpan!=="",c.thanks!=="",c.tratak>0,c.dhyan>0,c.smaran!=="",c.hari!=="",c.sukh.trim()!==""]}
+
+/* photos: looked up next to the page first (flat GitHub upload), then in a snato/ folder */
+const IMG_DIRS=["","snato/"];
+function santoImg(file){const im=document.createElement("img");im.alt="";im.loading="lazy";let i=0;const go=()=>{if(i>=IMG_DIRS.length){im.remove();return}im.src=IMG_DIRS[i++]+file};im.onerror=go;go();return im}
+
+</script>
+<script>
+let sel=today(),mon=today().slice(0,7);
+let lastSig="";
+function onState(st){
+  const sig=JSON.stringify(st);
+  if(sig===lastSig)return;lastSig=sig;
+  nyOnState(st);
+  parseState(st);
+  render();
+}
+
+/* ---------- daily ledger screen ---------- */
+function render(){
+  const ks=kinds();
+  const keep={};document.querySelectorAll("#fields input").forEach(i=>keep[i.dataset.k]=i.value);
+  const F=$("fields");F.innerHTML="";
+  ks.forEach(k=>{
+    const l=document.createElement("label");l.textContent=kindLabel(k);
+    const i=document.createElement("input");i.type="number";i.min="0";i.inputMode="numeric";
+    i.placeholder=k==="Smaran Dhun"?"Minutes":"Count";i.dataset.k=k;i.value=keep[k]||"";
+    F.append(l,i);
+  });
+  $("dt").value=sel;
+
+  const bal={};ks.forEach(k=>bal[k]=0);
+  rows.forEach(r=>{bal[r.kind]=(bal[r.kind]||0)+(r.type==="arpan"?-r.count:r.count)});
+  const B=$("bal");B.innerHTML="";
+  Object.keys(bal).forEach(k=>{
+    const d=document.createElement("div");d.className="row";
+    d.innerHTML='<span class="n"></span><span class="num"></span>';
+    d.children[0].textContent=k;d.children[1].textContent=bal[k]+unit(k);
+    const i=document.createElement("input");i.type="number";i.min="1";i.inputMode="numeric";
+    i.placeholder=k==="Smaran Dhun"?"Minutes":"Count";
+    const b=document.createElement("button");b.className="btn sm ghost";b.textContent="Offer";
+    b.onclick=()=>arpan(k,parseInt(i.value,10),bal[k],i);
+    d.append(i,b);B.appendChild(d);
+  });
+
+  const sorted=[...rows].sort((a,b)=>(b.date+(b.createdAt||"")).localeCompare(a.date+(a.createdAt||"")));
+  const H=$("hist");H.innerHTML="";
+  sorted.forEach(r=>{
+    const d=document.createElement("div");d.className="h";
+    const t=document.createElement("span");
+    t.textContent=r.date+" · "+(r.type==="arpan"?"Offered ":"Added ")+r.kind+" "+(r.type==="arpan"?"−":"+")+r.count+unit(r.kind);
+    const x=document.createElement("button");x.textContent="✕";x.title="Delete";
+    x.onclick=()=>{if(confirm("Delete this entry?"))db.del("log",r.id)};
+    d.append(t,x);H.appendChild(d);
+  });
+  if(!rows.length)H.innerHTML='<div class="msg">No entries yet</div>';
+
+  const T=$("tb");T.innerHTML="";
+  sorted.forEach(r=>{
+    const tr=document.createElement("tr");
+    [r.date,r.kind,r.type==="arpan"?"Offered":"Added",r.count+unit(r.kind)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
+    T.appendChild(tr);
+  });
+  renderMonth();renderActiveGoals();
+}
+
+function renderMonth(){
+  const [y,m]=mon.split("-").map(Number);
+  $("monname").textContent=new Date(y,m-1,1).toLocaleDateString("en-US",{month:"long",year:"numeric"});
+  const M=$("monsum");M.innerHTML="";
+  const tot={};kinds().forEach(k=>tot[k]={a:0,o:0});
+  rows.filter(r=>r.date&&r.date.slice(0,7)===mon).forEach(r=>{const t=tot[r.kind]||(tot[r.kind]={a:0,o:0});if(r.type==="arpan")t.o+=r.count;else t.a+=r.count});
+  Object.keys(tot).forEach(k=>{
+    const d=document.createElement("div");d.className="row";d.innerHTML='<span class="n"></span><span></span>';
+    d.children[0].textContent=k;d.children[1].textContent="Added "+tot[k].a+unit(k)+" · Offered "+tot[k].o+unit(k);M.appendChild(d);
+  });
+}
+function shiftMonth(n){const [y,m]=mon.split("-").map(Number);const d=new Date(y,m-1+n,1);mon=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");renderMonth()}
+
+/* ---------- daily ledger actions ---------- */
+function add(type,k,count,date){
+  return db.set("log","e"+rid(),{type,kind:k,count,date,createdAt:new Date().toISOString()});
+}
+$("dt").onchange=()=>{sel=$("dt").value||today()};
+
+$("save").onclick=()=>{
+  if(!db)return alert("Not connected yet");
+  const inputs=[...document.querySelectorAll("#fields input")];
+  const items=inputs.map(i=>({k:i.dataset.k,c:parseInt(i.value,10)})).filter(x=>x.c>0);
+  if(!items.length)return alert("Enter a count for at least one item");
+  const date=sel;
+  inputs.forEach(i=>i.value="");
+  items.forEach(x=>add("entry",x.k,x.c,date));
+  sel=today();$("dt").value=sel;
+  $("status").textContent="Entered: "+items.map(x=>x.k+" "+x.c+unit(x.k)).join(", ");
+};
+
+function arpan(k,c,have,inp){
+  if(!db)return alert("Not connected yet");
+  if(!c||c<1)return alert("Enter a count to offer");
+  if(c>have&&!confirm("This is more than your balance. Continue?"))return;
+  add("arpan",k,c,today());inp.value="";
+}
+
+function toCsv(){return ["id,date,type,kind,count,createdAt",...rows.map(r=>[r.id,r.date,r.type,r.kind,r.count,r.createdAt||""].join(","))].join("\n")}
+$("dl").onclick=()=>{
+  const blob=new Blob([toCsv()],{type:"text/csv"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="bhajan-data-"+today()+".csv";
+  document.body.appendChild(a);a.click();a.remove();
+};
+$("ld").onclick=()=>$("fi").click();
+$("fi").onchange=async e=>{
+  const f=e.target.files[0];e.target.value="";
+  if(!f||!db)return;
+  const lines=(await f.text()).split(/\r?\n/).slice(1).filter(Boolean);let n=0;
+  for(const ln of lines){
+    const [id,date,type,kind,count,createdAt]=ln.split(",");const c=parseInt(count,10);
+    if(!id||!date||!kind||!c||!["entry","arpan"].includes(type))continue;
+    db.set("log",id,{type,kind,count:c,date,createdAt:createdAt||""});n++;
+  }
+  say(n+" rows loaded from CSV. Saving…");
+};
+$("sync").onclick=async()=>{
+  if(!db)return;
+  try{await db.flush();await db.load();$("gwarn").hidden=db.isV2();$("nwarn").hidden=db.isN();if(!db.pendingCount())say("Synced with Google Sheet ✓","ok")}
+  catch(e){say("Cannot connect: "+e.message,"err")}
+};
+
+/* ---------- goals: only the goals whose period is running are shown here (created in the admin page) ---------- */
+function renderActiveGoals(){
+  const act=goals.filter(isActive);
+  $("agoalswrap").hidden=!act.length;
+  renderGoals($("goals"),act,{});
+}
+
+/* ---------- niyam page ---------- */
+function nyOnState(st){
+  NY.map={};Object.keys(st.niyam||{}).forEach(id=>{const d=st.niyam[id];if(d&&d.date)NY.map[d.date]=d});
+  if(!NY.cur)NY.cur=nyParse(NY.map[NY.date]);
+  if(!NY.dirty){const fresh=nyParse(NY.map[NY.date]);if(nyKey(fresh)!==nyKey(NY.cur)){NY.cur=fresh;nyRenderAll()}}
+  nySummary();
+}
+function nyTouch(){NY.dirty=true;$("nsaved").textContent="Saving…";clearTimeout(NY.timer);NY.timer=setTimeout(nySave,800);nyProgress()}
+function nySave(){
+  clearTimeout(NY.timer);if(!NY.dirty)return;
+  if(!db){$("nsaved").textContent="Not connected";return}
+  if(nyEmpty(NY.cur)&&!NY.map[NY.date]){NY.dirty=false;$("nsaved").textContent="";return}
+  if(db.set("niyam","n"+NY.date,nyDoc(NY.cur))){NY.dirty=false;$("nsaved").textContent="Saved · "+new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}
+  else $("nsaved").textContent="Not saved: update Code.gs";
+}
+function nySetDate(d){
+  nySave();NY.date=d;NY.cur=nyParse(NY.map[d]);NY.celebrated=false;nyRenderAll();
+}
+const nyDayLabel=d=>{const dt=new Date(d+"T00:00:00"),t=today();return (d===t?"Today · ":"")+dt.toLocaleDateString("en-US",{weekday:"short",day:"numeric",month:"short",year:"numeric"})};
+function nyStars(box,val,set){
+  box.innerHTML="";
+  for(let i=1;i<=5;i++)box.append(nh("button",{class:"star"+(i<=val?" on":""),title:i+" star",onclick:()=>{set(val===i?0:i);nyTouch();nyStars(box,val===i?0:i,set)}},"★"));
+}
+function nyYN(box,val,set,after){
+  box.innerHTML="";
+  [["Y","Ha","y"],["N","Na","n"]].forEach(([v,l,c])=>box.append(nh("button",{class:c+(val===v?" on":""),onclick:()=>{const nv=val===v?"":v;set(nv);nyTouch();nyYN(box,nv,set,after);if(after)after()}},l)));
+}
+function nyPersons(){
+  const B=$("npersons");B.innerHTML="";
+  NY.cur.persons.forEach((v,i)=>{
+    const sb=nh("div",{class:"stars"});
+    B.append(nh("div",{class:"prow"},nh("div",{class:"pn"},String(i+1)),nh("div",{class:"pname"},NIYAM_PERSONS[i]||("Mansi "+(i+1))),sb));
+    nyStars(sb,v,x=>{NY.cur.persons[i]=x});
+  });
+}
+const nyHue=s=>{let x=0;for(const c of s)x=(x*31+c.charCodeAt(0))%360;return x};
+function nySanto(){
+  const G=$("nsgrid");G.innerHTML="";
+  SANTO.forEach(s=>{
+    const on=Object.prototype.hasOwnProperty.call(NY.cur.santo,s.name);
+    if(NY.q&&!on&&!s.name.toLowerCase().includes(NY.q))return;
+    const av=nh("div",{class:"sav",style:"background:linear-gradient(135deg,hsl("+nyHue(s.name)+" 70% 55%),hsl("+((nyHue(s.name)+40)%360)+" 70% 45%))"},s.name.trim().charAt(0).toUpperCase());
+    if(s.img)av.append(santoImg(s.img))
+    G.append(nh("button",{class:"sant"+(on?" on":""),onclick:()=>{if(on)delete NY.cur.santo[s.name];else NY.cur.santo[s.name]="";nyTouch();nySanto()}},av,nh("small",null,s.name)));
+  });
+  const names=Object.keys(NY.cur.santo);
+  $("nscount").textContent=names.length?"Aaje "+names.length+" santo na darshan":"Haju koi darshan nathi dabavyu";
+  const P=$("nsprs");P.innerHTML="";
+  names.forEach(n=>{const inp=nh("input",{placeholder:"Prasadi ma shu malyu? (optional)",maxlength:"80"});inp.value=NY.cur.santo[n]||"";inp.oninput=()=>{NY.cur.santo[n]=inp.value;nyTouch()};P.append(nh("div",{class:"prs"},nh("span",null,n),inp))});
+}
+function nyWordsAll(){
+  const s=new Set(MAHIMA_WORDS);Object.values(NY.map).forEach(d=>{try{JSON.parse(d.words||"[]").forEach(w=>{w=String(w);if(!w.startsWith(HARI_TAG))s.add(w)})}catch(e){}});NY.cur.words.forEach(w=>s.add(w));return [...s];
+}
+function nyMahima(){
+  nyYN($("nmahima"),NY.cur.mahima,v=>{NY.cur.mahima=v},()=>{$("nmwrap").hidden=NY.cur.mahima!=="Y"});
+  $("nmwrap").hidden=NY.cur.mahima!=="Y";
+  const K=$("nwords");K.innerHTML="";
+  nyWordsAll().forEach(w=>K.append(nh("button",{class:NY.cur.words.includes(w)?"on":"",onclick:()=>{const i=NY.cur.words.indexOf(w);if(i>=0)NY.cur.words.splice(i,1);else NY.cur.words.push(w);nyTouch();nyMahima()}},w)));
+}
+function nyRenderAll(){
+  const c=NY.cur;
+  $("ndatetxt").textContent=nyDayLabel(NY.date);$("nnext").disabled=NY.date>=today();
+  nyPersons();nySanto();nyMahima();
+  nyYN($("narpan"),c.arpan,v=>{c.arpan=v});
+  nyYN($("nthanks"),c.thanks,v=>{c.thanks=v},()=>{$("nthanksto").hidden=c.thanks!=="Y"});
+  $("nthanksto").hidden=c.thanks!=="Y";$("nthanksto").value=c.thanksTo;
+  nyStars($("ntratak"),c.tratak,x=>{c.tratak=x});nyStars($("ndhyan"),c.dhyan,x=>{c.dhyan=x});
+  $("nsmaran").value=c.smaran===""?0:c.smaran;$("nsmtxt").textContent=c.smaran===""?"—":c.smaran+"%";
+  if(document.activeElement!==$("nhari"))$("nhari").value=c.hari;$("nhtxt").textContent=c.hari===""?"—":c.hari+" min";
+  if(document.activeElement!==$("nsukh"))$("nsukh").value=c.sukh;
+  nyProgress();nySummary();
+}
+function nyProgress(){
+  const d=nyDone(NY.cur),n=d.filter(Boolean).length;
+  $("nbar").style.width=Math.round(n/d.length*100)+"%";$("nbar").classList.toggle("full",n===d.length);
+  $("ncount").textContent=n+" / "+d.length+" puru"+(n===d.length?" · Aajna badha niyam puru thaya!":"");
+}
+function nySummary(){
+  const B=$("nsum");B.innerHTML="";
+  const yn=v=>v==="Y"?nh("span",{class:"y"},"✓"):v==="N"?nh("span",{class:"no"},"✗"):"–";
+  const rows=[];
+  for(let i=0;i<7;i++){
+    const d=new Date();d.setDate(d.getDate()-i);const k=iso(d),c=(k===NY.date&&NY.cur)?NY.cur:nyParse(NY.map[k]),rated=c.persons.filter(x=>x>0);
+    rows.push(nh("tr",{class:"row",onclick:()=>nySetDate(k)},nh("td",null,d.toLocaleDateString("en-US",{weekday:"short",day:"numeric",month:"short"})),
+      nh("td",null,rated.length?(rated.reduce((a,b)=>a+b,0)/rated.length).toFixed(1):"–"),nh("td",null,String(Object.keys(c.santo).length||"–")),
+      nh("td",null,yn(c.mahima)),nh("td",null,yn(c.arpan)),nh("td",null,yn(c.thanks)),nh("td",null,c.tratak||"–"),nh("td",null,c.dhyan||"–"),nh("td",null,c.smaran===""?"–":c.smaran+"%"),nh("td",null,c.hari===""?"–":c.hari+"m")));
+  }
+  B.append(nh("table",null,nh("thead",null,nh("tr",null,["Divas","Mansi ★","Santo","Mahima","Arpan","Thanks","Tratak","Dhyan","Smaran","Vato"].map(x=>nh("th",null,x)))),nh("tbody",null,rows)));
+}
+$("nprev").onclick=()=>{const d=new Date(NY.date+"T00:00:00");d.setDate(d.getDate()-1);nySetDate(iso(d))};
+$("nnext").onclick=()=>{const d=new Date(NY.date+"T00:00:00");d.setDate(d.getDate()+1);if(iso(d)<=today())nySetDate(iso(d))};
+$("ndatebox").onclick=()=>{const i=$("ndatein");i.hidden=!i.hidden;i.value=NY.date;i.max=today()};
+$("ndatein").onchange=e=>{if(e.target.value&&e.target.value<=today()){nySetDate(e.target.value)}$("ndatein").hidden=true};
+$("nwadd").onclick=()=>{const w=$("nwnew").value.replace(/\s+/g," ").trim();if(!w)return;if(!NY.cur.words.includes(w))NY.cur.words.push(w);$("nwnew").value="";nyTouch();nyMahima()};
+$("nwnew").addEventListener("keydown",e=>{if(e.key==="Enter")$("nwadd").click()});
+$("nthanksto").oninput=e=>{NY.cur.thanksTo=e.target.value;nyTouch()};
+$("nsq").oninput=e=>{NY.q=e.target.value.trim().toLowerCase();nySanto()};
+$("nsukh").oninput=e=>{NY.cur.sukh=e.target.value;nyTouch()};
+$("nsmaran").oninput=e=>{NY.cur.smaran=String(e.target.value);$("nsmtxt").textContent=NY.cur.smaran+"%";nyTouch()};
+document.querySelectorAll(".qp:not(.qh) button").forEach(b=>b.onclick=()=>{NY.cur.smaran=b.dataset.v;$("nsmaran").value=b.dataset.v===""?0:b.dataset.v;$("nsmtxt").textContent=b.dataset.v===""?"—":b.dataset.v+"%";nyTouch()});
+const hset=v=>{NY.cur.hari=v===""?"":String(Math.max(0,Math.min(1440,parseInt(v,10)||0)));$("nhtxt").textContent=NY.cur.hari===""?"—":NY.cur.hari+" min";nyTouch()};
+$("nhari").oninput=e=>hset(e.target.value);
+document.querySelectorAll(".qh button").forEach(b=>b.onclick=()=>{hset(b.dataset.v);$("nhari").value=NY.cur.hari});
+window.addEventListener("beforeunload",()=>{if(NY.dirty)nySave()});
+NY.cur=nyBlank();nyRenderAll();
+
+/* ---------- tabs ---------- */
+function showTab(){
+  const t=location.hash==="#niyam"?"niyam":"main";
+  $("v-main").hidden=t!=="main";$("v-niyam").hidden=t!=="niyam";
+  ["main","niyam"].forEach(k=>$("tab-"+k).classList.toggle("on",t===k));
+}
+$("tab-main").onclick=()=>{location.hash="main"};
+$("tab-niyam").onclick=()=>{location.hash="niyam"};
+window.addEventListener("hashchange",showTab);
+window.addEventListener("beforeunload",e=>{if(db&&db.pendingCount()){e.preventDefault();e.returnValue=""}});
+
+/* ---------- start ---------- */
+showTab();render();
+(async()=>{
+  db=sheetDb(SHEET_URL);
+  db.subscribe(onState);
+  const reload=()=>db.load().then(()=>{$("gwarn").hidden=db.isV2();$("nwarn").hidden=db.isN()});
+  try{
+    await reload();
+    if(db.isV2()&&db.isN())say("Connected to Google Sheet ✓","ok");
+    else if(db.isV2())say("Connected, but the Niyam page needs the new Code.gs.","err");
+    else say("Connected, but the Google Apps Script is the old version. Goals need the new Code.gs.","err");
+  }catch(e){
+    say("Cannot connect to Google Sheet ("+e.message+"). Check that the link is right and access is set to Anyone.","err");
+  }
+  db.start();
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)reload().catch(()=>{})});
+  setInterval(()=>{if(!document.hidden)reload().catch(()=>{})},30000);
+})();
+</script>
+</body>
+</html>
