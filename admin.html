@@ -188,6 +188,7 @@ a.back{display:block;text-align:center;color:var(--mute);font-size:.85rem;margin
 </div>
 </div>
 
+<p class="mute" id="ver" style="text-align:center;margin:20px 0 30px">Version 3</p>
 <script>
 // Your Google Apps Script web app link (all data is stored in the linked Google Sheet)
 const SHEET_URL="https://script.google.com/macros/s/AKfycbxGHyTeWsDm6IsjvlLl-dOLtMyIFVCDgIXQmKT88SUMoAY41r66yjQU0QlAvAxt0LQUYg/exec";
@@ -458,7 +459,14 @@ function nyDone(c){return [c.persons.every(x=>x>0),Object.keys(c.santo).length>0
 
 /* photos: looked up next to the page first (flat GitHub upload), then in a snato/ folder */
 const IMG_DIRS=["","snato/"];
-function santoImg(file){const im=document.createElement("img");im.alt="";im.loading="lazy";let i=0;const go=()=>{if(i>=IMG_DIRS.length){im.remove();return}im.src=IMG_DIRS[i++]+file};im.onerror=go;go();return im}
+const IMGST={ok:new Set(),bad:new Set()};
+function imgNote(){
+  const e=$("nimgnote");if(e)e.textContent=IMGST.bad.size?"Photo nathi malta ("+IMGST.bad.size+"): "+[...IMGST.bad].slice(0,3).join(", ")+" … e file GitHub ma index.html ni baju ma che ke nahi te check karo.":"";
+  const v=$("ver");if(v)v.textContent="Version 3 · photos loaded: "+IMGST.ok.size+(IMGST.bad.size?" · missing: "+IMGST.bad.size:"");
+}
+function santoImg(file){const im=document.createElement("img");im.alt="";im.loading="lazy";let i=0;
+  const go=()=>{if(i>=IMG_DIRS.length){IMGST.bad.add(file);imgNote();im.remove();return}im.src=IMG_DIRS[i++]+file+"?v=3"};
+  im.onerror=go;im.onload=()=>{IMGST.ok.add(file);IMGST.bad.delete(file);imgNote()};go();return im}
 
 </script>
 <script>
